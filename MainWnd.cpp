@@ -6,6 +6,7 @@
 #include "BaseWnd.h"
 #include "State.h"
 #include "SessionListener.h"
+#include "AudioControl.h"
 
 template <class T> void SafeRelease(T **ppT)
 {
@@ -19,7 +20,7 @@ template <class T> void SafeRelease(T **ppT)
 MainWnd::MainWnd() : 
 	manager{ nullptr }, 
 	sessListener{ nullptr }, 
-	sessions{ std::vector<IAudioSessionControl *>{} }, 
+	sessions{ std::vector<AudioControl *>{} }, 
 	d2Factory{ nullptr },
 	d2RenderTgt{ nullptr },
 	d2Brush{ nullptr }
@@ -28,7 +29,7 @@ MainWnd::MainWnd() :
 MainWnd::MainWnd(IAudioSessionManager2 *mng) : 
 	manager{ mng }, 
 	sessListener{ new SessionListener{m_hwnd} }, 
-	sessions{ std::vector<IAudioSessionControl *>{} },
+	sessions{ std::vector<AudioControl *>{} },
 	d2Factory{ nullptr },
 	d2RenderTgt{ nullptr },
 	d2Brush{ nullptr }
@@ -56,7 +57,7 @@ MainWnd::MainWnd(IAudioSessionManager2 *mng) :
 		if (FAILED(result)) {
 			continue;
 		}
-		sessions.emplace_back(session);
+		addSession(session);
 	}
 	
 }
@@ -67,8 +68,8 @@ MainWnd::~MainWnd() {
 		delete sessListener;
 	}
 	// TODO: syntax
-	for (IAudioSessionControl *session : sessions) {
-		session->Release();
+	for (AudioControl *session : sessions) {
+		delete session;
 	}
 	manager->Release();
 }
@@ -108,18 +109,14 @@ LRESULT MainWnd::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
 }
 
-//private methods
-void MainWnd::calculateLayout()
-{
-	if (d2RenderTgt != nullptr)
-	{
-		D2D1_SIZE_F size = d2RenderTgt->GetSize();
-		const float x = size.width / 2;
-		const float y = size.height / 2;
-		const float radius = min(x, y);
-		//ellipse = D2D1::Ellipse(D2D1::Point2F(x, y), radius, radius);
-	}
+AudioControl *MainWnd::addSession(IAudioSessionControl *session) {
+	AudioControl *control = new AudioControl{ session };
+	sessions.emplace_back(control);
+	setControlElements();
+	return control;
 }
+
+//private methods
 
 HRESULT MainWnd::createGraphicsResources()
 {
@@ -138,12 +135,12 @@ HRESULT MainWnd::createGraphicsResources()
 
 		if (SUCCEEDED(hr))
 		{
-			const D2D1_COLOR_F color = D2D1::ColorF(1.0f, 1.0f, 0);
+			const D2D1_COLOR_F color = D2D1::ColorF(1.0f, 0, 0);
 			hr = d2RenderTgt->CreateSolidColorBrush(color, &d2Brush);
 
 			if (SUCCEEDED(hr))
 			{
-				calculateLayout();
+				setControlElements();
 			}
 		}
 	}
@@ -166,8 +163,11 @@ void MainWnd::onPaint()
 
 		d2RenderTgt->BeginDraw();
 
-		d2RenderTgt->Clear(D2D1::ColorF(D2D1::ColorF::DarkSlateGray));
-		//d2RenderTgt->FillEllipse(ellipse, d2Brush);
+		d2RenderTgt->Clear(D2D1::ColorF(D2D1::ColorF::DarkGray));
+
+		for (AudioControl *session : sessions) {
+			d2RenderTgt->FillRoundedRectangle(session->getElement(), d2Brush);
+		}
 
 		hr = d2RenderTgt->EndDraw();
 		if (FAILED(hr) || hr == D2DERR_RECREATE_TARGET)
@@ -188,7 +188,39 @@ void MainWnd::resize()
 		D2D1_SIZE_U size = D2D1::SizeU(rc.right, rc.bottom);
 
 		d2RenderTgt->Resize(size);
-		calculateLayout();
+		setControlElements();
 		InvalidateRect(m_hwnd, NULL, FALSE);
+	}
+}
+
+D2D1_ROUNDED_RECT *MainWnd::createRoundRect(D2D1_RECT_F &rect) {
+	D2D1_ROUNDED_RECT *roundRect = new D2D1_ROUNDED_RECT{};
+	roundRect->rect = rect;
+	float radius = min(rect.right - rect.left, rect.bottom - rect.top) / 2;
+	roundRect->radiusX = radius;
+	roundRect->radiusY = radius;
+	return roundRect;
+}
+
+void MainWnd::setControlElements() {
+	if (!d2RenderTgt) {
+		return;
+	}
+
+	D2D1_SIZE_F size = d2RenderTgt->GetSize();
+	const float controlWidth = size.width / (sessions.size() + 1);
+	const float controlHeight = size.height * 4 / 5;
+	const float topPadding = size.height / 10;
+
+	for (int i = 0; i < sessions.size(); i++) {
+		AudioControl *session = sessions[i];
+		float leftEdge = 0.5f * controlWidth + (i * controlWidth);
+		D2D1_RECT_F rect = D2D1::RectF(leftEdge, topPadding, leftEdge + 0.9f * controlWidth, controlHeight + topPadding);
+		//D2D1_ROUNDED_RECT roundRect = D2D1::RoundedRect(rect, 0, 0);
+		D2D1_ROUNDED_RECT *roundRect = new D2D1_ROUNDED_RECT{};
+		//roundRect->rect = std::move(rect);
+		roundRect->rect = rect;
+		session->deleteElement();
+		session->setElement(roundRect);
 	}
 }

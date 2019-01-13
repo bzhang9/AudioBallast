@@ -1,5 +1,6 @@
 #pragma once
 #include <windows.h>
+#include <d2d1.h>
 #include "BaseWnd.h"
 #include <vector>
 
@@ -8,29 +9,32 @@ struct ID2D1Factory;
 struct ID2D1HwndRenderTarget;
 struct ID2D1SolidColorBrush;
 
+class AudioControl;
+
 class MainWnd : public BaseWnd<MainWnd> {
 	IAudioSessionManager2 *manager;
 	IAudioSessionNotification *sessListener;
-	std::vector<IAudioSessionControl *> sessions;
+	std::vector<AudioControl *> sessions;
 
 	// D2D members
 	ID2D1Factory *d2Factory;
 	ID2D1HwndRenderTarget *d2RenderTgt;
 	ID2D1SolidColorBrush *d2Brush;
-	
 
-	void calculateLayout();
 	HRESULT createGraphicsResources();
 	void discardGraphicsResources();
 	void onPaint();
 	void resize();
 
+	D2D1_ROUNDED_RECT *createRoundRect(D2D1_RECT_F &);
+	void setControlElements();
+
 public:
-	// TODO: confirm
 	MainWnd();
 	MainWnd(IAudioSessionManager2 *mng);
 	~MainWnd();
 
 	PCWSTR ClassName() const;
 	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	AudioControl *addSession(IAudioSessionControl *);
 };
