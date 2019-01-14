@@ -6,26 +6,26 @@ struct D2D1_ROUNDED_RECT;
 
 class AudioControl {
 	IAudioSessionControl *control;
+	ISimpleAudioVolume *volControl;
 	D2D1_ROUNDED_RECT *element;
 
-	int volume;
-	bool isMuted;
 	// Track process
+	bool setMute(BOOL);
 
 public:
-	AudioControl(IAudioSessionControl *, D2D1_ROUNDED_RECT *);
+	//AudioControl(IAudioSessionControl *, D2D1_ROUNDED_RECT *);
 
-	AudioControl(IAudioSessionControl *);
+	AudioControl(IAudioSessionControl *, ISimpleAudioVolume *);
 
 	~AudioControl();
 
-	int getVolume();
+	float getVolume();
 
-	bool setVolume(int);
+	bool setVolume(float);
 
-	void mute();
+	bool mute();
 
-	void unmute();
+	bool unmute();
 
 	bool audible();
 

@@ -18,6 +18,7 @@ template <class T> void SafeRelease(T **ppT)
 }
 
 MainWnd::MainWnd() : 
+	volManager{ nullptr },
 	manager{ nullptr }, 
 	sessListener{ nullptr }, 
 	sessions{ std::vector<AudioControl *>{} }, 
@@ -26,7 +27,8 @@ MainWnd::MainWnd() :
 	d2Brush{ nullptr }
 {}
 
-MainWnd::MainWnd(IAudioSessionManager2 *mng) : 
+MainWnd::MainWnd(IAudioSessionManager *volMng, IAudioSessionManager2 *mng) : 
+	volManager{ volMng },
 	manager{ mng }, 
 	sessListener{ new SessionListener{m_hwnd} }, 
 	sessions{ std::vector<AudioControl *>{} },
@@ -110,7 +112,11 @@ LRESULT MainWnd::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 AudioControl *MainWnd::addSession(IAudioSessionControl *session) {
-	AudioControl *control = new AudioControl{ session };
+	ISimpleAudioVolume *volMng;
+	// TODO: do not assign to null
+	//HRESULT result = volManager->GetSimpleAudioVolume(__uuidof(*session), FALSE, &volMng);
+	HRESULT result = volManager->GetSimpleAudioVolume(nullptr, FALSE, &volMng);
+	AudioControl *control = new AudioControl{ session, volMng };
 	sessions.emplace_back(control);
 	setControlElements();
 	return control;

@@ -12,6 +12,7 @@ struct ID2D1SolidColorBrush;
 class AudioControl;
 
 class MainWnd : public BaseWnd<MainWnd> {
+	IAudioSessionManager *volManager;
 	IAudioSessionManager2 *manager;
 	IAudioSessionNotification *sessListener;
 	std::vector<AudioControl *> sessions;
@@ -31,7 +32,7 @@ class MainWnd : public BaseWnd<MainWnd> {
 
 public:
 	MainWnd();
-	MainWnd(IAudioSessionManager2 *mng);
+	MainWnd(IAudioSessionManager *, IAudioSessionManager2 *);
 	~MainWnd();
 
 	PCWSTR ClassName() const;
