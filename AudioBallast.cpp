@@ -60,7 +60,7 @@ IAudioSessionManager2 *getAudioManager() {
 
 	IMMDevice *device;
 	// TODO: check eMultimedia
-	result = mmDevEnum->GetDefaultAudioEndpoint(eCapture, eMultimedia, &device);
+	result = mmDevEnum->GetDefaultAudioEndpoint(eRender, eMultimedia, &device);
 
 	if (FAILED(result)) {
 		mmDevEnum->Release();
