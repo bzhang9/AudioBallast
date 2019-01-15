@@ -7,13 +7,14 @@
 #include "State.h"
 #include "SessionListener.h"
 #include "AudioControl.h"
+#include "AudioBallastHelpers.h"
 
 template <class T> void SafeRelease(T **ppT)
 {
 	if (*ppT)
 	{
 		(*ppT)->Release();
-		*ppT = NULL;
+		*ppT = nullptr;
 	}
 }
 
@@ -27,8 +28,8 @@ MainWnd::MainWnd() :
 	d2Brush{ nullptr }
 {}
 
-MainWnd::MainWnd(IAudioSessionManager *volMng, IAudioSessionManager2 *mng) : 
-	volManager{ volMng },
+MainWnd::MainWnd(IAudioSessionManager2 *mng) : 
+	volManager{ nullptr },
 	manager{ mng }, 
 	sessListener{ new SessionListener{m_hwnd} }, 
 	sessions{ std::vector<AudioControl *>{} },
@@ -37,6 +38,11 @@ MainWnd::MainWnd(IAudioSessionManager *volMng, IAudioSessionManager2 *mng) :
 	d2Brush{ nullptr }
 {
 	HRESULT result = manager->RegisterSessionNotification(sessListener);
+	result = manager->QueryInterface(__uuidof(IAudioSessionManager), (void **)&volManager);
+	if (FAILED(result)) {
+		return;
+	}
+	result = manager->RegisterSessionNotification(sessListener);
 	if (FAILED(result)) {
 		return;
 	}
@@ -73,7 +79,7 @@ MainWnd::~MainWnd() {
 	for (AudioControl *session : sessions) {
 		delete session;
 	}
-	manager->Release();
+	SafeRelease(&manager);
 }
 
 PCWSTR MainWnd::ClassName() const {
@@ -112,11 +118,7 @@ LRESULT MainWnd::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 AudioControl *MainWnd::addSession(IAudioSessionControl *session) {
-	ISimpleAudioVolume *volMng;
-	// TODO: do not assign to null
-	//HRESULT result = volManager->GetSimpleAudioVolume(__uuidof(*session), FALSE, &volMng);
-	HRESULT result = volManager->GetSimpleAudioVolume(nullptr, FALSE, &volMng);
-	AudioControl *control = new AudioControl{ session, volMng };
+	AudioControl *control = new AudioControl{ session };
 	sessions.emplace_back(control);
 	setControlElements();
 	return control;

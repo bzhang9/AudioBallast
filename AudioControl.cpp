@@ -6,12 +6,15 @@
 	element{ element } 
 {}*/
 
-AudioControl::AudioControl(IAudioSessionControl *control, ISimpleAudioVolume *volControl) :
+AudioControl::AudioControl(IAudioSessionControl *control) :
 	control{ control },
-	volControl{ volControl },
+	volControl{ nullptr },
 	element{ nullptr }
 {
-
+	HRESULT result = control->QueryInterface(__uuidof(ISimpleAudioVolume), (void **)&volControl);
+	if (FAILED(result)) {
+		return;
+	}
 }
 
 AudioControl::~AudioControl() {

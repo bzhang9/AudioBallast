@@ -15,7 +15,7 @@ class AudioControl {
 public:
 	//AudioControl(IAudioSessionControl *, D2D1_ROUNDED_RECT *);
 
-	AudioControl(IAudioSessionControl *, ISimpleAudioVolume *);
+	AudioControl(IAudioSessionControl *);
 
 	~AudioControl();
 

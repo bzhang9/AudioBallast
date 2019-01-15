@@ -9,7 +9,6 @@
 //req?
 #include "MainWnd.h"
 
-IAudioSessionManager *getAudioVolManager();
 IAudioSessionManager2 *getAudioManager();
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow)
@@ -19,7 +18,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 		return 1;
 	}
 
-	MainWnd win{getAudioVolManager(), getAudioManager()};
+	MainWnd win{getAudioManager()};
 
 	//TODO: not working
 	if (!win.Create(L"AudioBallast", WS_OVERLAPPEDWINDOW))
@@ -40,52 +39,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 
 	CoUninitialize();
 	return 0;
-}
-
-IAudioSessionManager *getAudioVolManager() {
-	const CLSID CLSID_MMDevEnum = __uuidof(MMDeviceEnumerator);
-	const IID IID_IASM = __uuidof(IAudioSessionManager);
-	////////////////////
-	IMMDeviceEnumerator *mmDevEnum;
-
-	HRESULT result = CoCreateInstance(
-		CLSID_MMDevEnum,
-		nullptr,
-		CLSCTX_ALL,
-		IID_PPV_ARGS(&mmDevEnum)
-	);
-
-	if (FAILED(result)) {
-		return nullptr;
-	}
-
-	IMMDevice *device;
-	// TODO: check eMultimedia
-	result = mmDevEnum->GetDefaultAudioEndpoint(eCapture, eMultimedia, &device);
-
-	if (FAILED(result)) {
-		mmDevEnum->Release();
-		return nullptr;
-	}
-
-	IAudioSessionManager *manager;
-
-	result = device->Activate(
-		IID_IASM,
-		CLSCTX_ALL,
-		nullptr,
-		(void**)&manager
-	);
-
-	device->Release();
-	mmDevEnum->Release();
-
-	if (FAILED(result)) {
-		return nullptr;
-	}
-
-	return manager;
-	///////////////////
 }
 
 IAudioSessionManager2 *getAudioManager() {

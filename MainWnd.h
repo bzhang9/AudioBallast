@@ -32,7 +32,7 @@ class MainWnd : public BaseWnd<MainWnd> {
 
 public:
 	MainWnd();
-	MainWnd(IAudioSessionManager *, IAudioSessionManager2 *);
+	MainWnd(IAudioSessionManager2 *);
 	~MainWnd();
 
 	PCWSTR ClassName() const;
