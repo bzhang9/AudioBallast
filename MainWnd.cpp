@@ -163,26 +163,46 @@ void MainWnd::discardGraphicsResources()
 void MainWnd::onPaint()
 {
 	HRESULT hr = createGraphicsResources();
-	if (SUCCEEDED(hr))
-	{
-		PAINTSTRUCT ps;
-		BeginPaint(m_hwnd, &ps);
 
-		d2RenderTgt->BeginDraw();
-
-		d2RenderTgt->Clear(D2D1::ColorF(D2D1::ColorF::DarkGray));
-
-		for (AudioControl *session : sessions) {
-			d2RenderTgt->FillRoundedRectangle(session->getElement(), d2Brush);
-		}
-
-		hr = d2RenderTgt->EndDraw();
-		if (FAILED(hr) || hr == D2DERR_RECREATE_TARGET)
-		{
-			discardGraphicsResources();
-		}
-		EndPaint(m_hwnd, &ps);
+	if (FAILED(hr)) {
+		return;
 	}
+
+	PAINTSTRUCT ps;
+	BeginPaint(m_hwnd, &ps);
+
+	d2RenderTgt->BeginDraw();
+
+	d2RenderTgt->Clear(D2D1::ColorF(D2D1::ColorF::DarkGray));
+
+	for (AudioControl *session : sessions) {
+		//////////////////////
+		session->setVolume(0.5f);
+		//////////////////
+		const D2D1_COLOR_F bgColor = session->getBackClr();
+		D2D1_ROUNDED_RECT *element = session->getElement();
+
+		d2Brush->SetColor(bgColor);
+		d2RenderTgt->FillRoundedRectangle(element, d2Brush);
+
+		float fillHeight = session->getVolume() * (element->rect.bottom - element->rect.top);
+		D2D1_RECT_F fillBase = D2D1::RectF(element->rect.left, element->rect.bottom - fillHeight, element->rect.right, element->rect.bottom);
+		D2D1_ROUNDED_RECT fill;
+		fill.rect = fillBase;
+		fill.radiusX = element->radiusX;
+		fill.radiusY = element->radiusY;
+
+		const D2D1_COLOR_F fgColor = session->getForeClr();
+		d2Brush->SetColor(fgColor);
+		d2RenderTgt->FillRoundedRectangle(fill, d2Brush);
+	}
+
+	hr = d2RenderTgt->EndDraw();
+	if (FAILED(hr) || hr == D2DERR_RECREATE_TARGET)
+	{
+		discardGraphicsResources();
+	}
+	EndPaint(m_hwnd, &ps);
 }
 
 void MainWnd::resize()
@@ -215,7 +235,7 @@ void MainWnd::setControlElements() {
 	}
 
 	D2D1_SIZE_F size = d2RenderTgt->GetSize();
-	const float controlWidth = size.width / (sessions.size() + 1);
+	const float controlWidth = min(size.width / (sessions.size() + 1), 150.0f);
 	const float controlHeight = size.height * 4 / 5;
 	const float topPadding = size.height / 10;
 
@@ -227,6 +247,9 @@ void MainWnd::setControlElements() {
 		D2D1_ROUNDED_RECT *roundRect = new D2D1_ROUNDED_RECT{};
 		//roundRect->rect = std::move(rect);
 		roundRect->rect = rect;
+		float rad = min(0.1f * controlWidth, 0.1f * controlHeight);
+		roundRect->radiusX = rad;
+		roundRect->radiusY = rad;
 		session->deleteElement();
 		session->setElement(roundRect);
 	}

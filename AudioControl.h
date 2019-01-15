@@ -1,8 +1,10 @@
 #pragma once
 #include <windows.h>
 #include <audiopolicy.h>
+#include <d2d1.h>
 
-struct D2D1_ROUNDED_RECT;
+//struct D2D1_ROUNDED_RECT;
+//class D2D1::ColorF;
 
 class AudioControl {
 	IAudioSessionControl *control;
@@ -35,5 +37,7 @@ public:
 
 	void deleteElement();
 
-	
+	const D2D1::ColorF &getForeClr();
+
+	const D2D1::ColorF &getBackClr();
 };
