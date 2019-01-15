@@ -37,8 +37,7 @@ MainWnd::MainWnd(IAudioSessionManager2 *mng) :
 	d2RenderTgt{ nullptr },
 	d2Brush{ nullptr }
 {
-	HRESULT result = manager->RegisterSessionNotification(sessListener);
-	result = manager->QueryInterface(__uuidof(IAudioSessionManager), (void **)&volManager);
+	HRESULT result = manager->QueryInterface(__uuidof(IAudioSessionManager), (void **)&volManager);
 	if (FAILED(result)) {
 		return;
 	}
