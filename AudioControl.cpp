@@ -89,5 +89,5 @@ const D2D1::ColorF &AudioControl::getBackClr() {
 	float vol = getVolume();
 	float r = vol > 0.5f ? 2.0f - 2 * vol : 1.0f;
 	float g = vol > 0.5f ? 1.0f : 2 * vol;
-	return D2D1::ColorF(r, g, 0, 0.8f);
+	return D2D1::ColorF(r, g, 0, 0.5f);
 }

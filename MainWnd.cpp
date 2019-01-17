@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <windowsx.h>
 #include <d2d1.h>
 #pragma comment(lib, "d2d1")
 #include <audiopolicy.h>
@@ -8,6 +9,15 @@
 #include "SessionListener.h"
 #include "AudioControl.h"
 #include "AudioBallastHelpers.h"
+#include "PxlConverter.h"
+
+#include <iostream>
+
+// TODO: saferelease
+// TODO: mute
+// TODO: master vol
+// TODO: session labels
+// TODO: listeners (add, remove, extern update)
 
 template <class T> void SafeRelease(T **ppT)
 {
@@ -25,7 +35,9 @@ MainWnd::MainWnd() :
 	sessions{ std::vector<AudioControl *>{} }, 
 	d2Factory{ nullptr },
 	d2RenderTgt{ nullptr },
-	d2Brush{ nullptr }
+	d2Brush{ nullptr },
+	mouseCoords( D2D1::Point2F() ),
+	current{ nullptr }
 {}
 
 MainWnd::MainWnd(IAudioSessionManager2 *mng) : 
@@ -35,7 +47,9 @@ MainWnd::MainWnd(IAudioSessionManager2 *mng) :
 	sessions{ std::vector<AudioControl *>{} },
 	d2Factory{ nullptr },
 	d2RenderTgt{ nullptr },
-	d2Brush{ nullptr }
+	d2Brush{ nullptr },
+	mouseCoords( D2D1::Point2F() ),
+	current{ nullptr }
 {
 	HRESULT result = manager->QueryInterface(__uuidof(IAudioSessionManager), (void **)&volManager);
 	if (FAILED(result)) {
@@ -89,28 +103,33 @@ LRESULT MainWnd::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
 	{
+	case WM_MOUSEMOVE:
+		onMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), (DWORD)wParam);
+		return 0;
+	case WM_LBUTTONDOWN:
+		onLDown(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), (DWORD)wParam);
+		return 0;
+	case WM_LBUTTONUP:
+		onLUp();
+		return 0;
+	case WM_PAINT:
+		onPaint();
+		return 0;
+	case WM_SIZE:
+		resize();
+		return 0;
 	case WM_CREATE:
 		if (FAILED(D2D1CreateFactory(
 			D2D1_FACTORY_TYPE_SINGLE_THREADED, &d2Factory)))
 		{
 			return -1;  // Fail CreateWindowEx.
 		}
+		PxlConverter::init(d2Factory);
 		return 0;
 	case WM_DESTROY:
 		discardGraphicsResources();
 		SafeRelease(&d2Factory);
 		PostQuitMessage(0);
-		return 0;
-
-	case WM_PAINT:
-		onPaint();
-		return 0;
-		/*PAINTSTRUCT ps;
-		HDC hdc = BeginPaint(m_hwnd, &ps);
-		FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
-		EndPaint(m_hwnd, &ps);*/
-	case WM_SIZE:
-		resize();
 		return 0;
 	}
 	return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
@@ -176,9 +195,6 @@ void MainWnd::onPaint()
 	d2RenderTgt->Clear(D2D1::ColorF(D2D1::ColorF::DarkGray));
 
 	for (AudioControl *session : sessions) {
-		//////////////////////
-		session->setVolume(0.5f);
-		//////////////////
 		const D2D1_COLOR_F bgColor = session->getBackClr();
 		D2D1_ROUNDED_RECT *element = session->getElement();
 
@@ -187,6 +203,7 @@ void MainWnd::onPaint()
 
 		float fillHeight = session->getVolume() * (element->rect.bottom - element->rect.top);
 		D2D1_RECT_F fillBase = D2D1::RectF(element->rect.left, element->rect.bottom - fillHeight, element->rect.right, element->rect.bottom);
+		// TODO: replace with D2D1::RoundedRect(rect, radx, rady)
 		D2D1_ROUNDED_RECT fill;
 		fill.rect = fillBase;
 		fill.radiusX = element->radiusX;
@@ -220,7 +237,56 @@ void MainWnd::resize()
 	}
 }
 
-D2D1_ROUNDED_RECT *MainWnd::createRoundRect(D2D1_RECT_F &rect) {
+void MainWnd::onLDown(int xCoord, int yCoord, DWORD flags) {
+	SetCapture(m_hwnd);
+	mouseCoords = PxlConverter::toDip(xCoord, yCoord);
+	current = getController(mouseCoords);
+
+	if (!current) {
+		return;
+	}
+
+	const D2D1_RECT_F &element = current->getElement()->rect;
+	float adjust = 1.0f - (mouseCoords.y - element.top) / (element.bottom - element.top);
+	current->setVolume(adjust);
+	paintController(current);
+}
+
+void MainWnd::onLUp() {
+	ReleaseCapture();
+	current = nullptr;
+}
+
+void MainWnd::onMouseMove(int xCoord, int yCoord, DWORD flags) {
+	if (!current || !(flags & MK_LBUTTON)) {
+		return;
+	}
+	mouseCoords = PxlConverter::toDip(xCoord, yCoord);
+	const D2D1_RECT_F &element = current->getElement()->rect;
+	float adjust = 1.0f - (mouseCoords.y - element.top) / (element.bottom - element.top);
+	if (adjust > 1.0f) {
+		adjust = 1.0f;
+	}
+	else if (adjust < 0.0f) {
+		adjust = 0.0f;
+	}
+	current->setVolume(adjust);
+	paintController(current);
+}
+
+AudioControl *MainWnd::getController(D2D1_POINT_2F &pt) {
+	FLOAT x = pt.x;
+	FLOAT y = pt.y;
+	for (AudioControl *session : sessions) {
+		D2D1_RECT_F &rect = session->getElement()->rect;
+		if (x > rect.left && x < rect.right && y > rect.top && y < rect.bottom) {
+			return session;
+		}
+	}
+	return nullptr;
+}
+
+D2D1_ROUNDED_RECT *MainWnd::createRoundRect(const D2D1_RECT_F &rect) {
 	D2D1_ROUNDED_RECT *roundRect = new D2D1_ROUNDED_RECT{};
 	roundRect->rect = rect;
 	float radius = min(rect.right - rect.left, rect.bottom - rect.top) / 2;
@@ -253,4 +319,48 @@ void MainWnd::setControlElements() {
 		session->deleteElement();
 		session->setElement(roundRect);
 	}
+}
+
+void MainWnd::paintController(AudioControl *session) {
+	HRESULT hr = createGraphicsResources();
+
+	if (FAILED(hr)) {
+		return;
+	}
+
+	PAINTSTRUCT ps;
+	BeginPaint(m_hwnd, &ps);
+
+	d2RenderTgt->BeginDraw();
+
+	// TODO: make clr const member
+	const D2D1_COLOR_F baseColor = D2D1::ColorF(D2D1::ColorF::DarkGray);
+	const D2D1_COLOR_F bgColor = session->getBackClr();
+	D2D1_ROUNDED_RECT *element = session->getElement();
+
+	d2Brush->SetColor(baseColor);
+	//d2RenderTgt->FillRoundedRectangle(element, d2Brush);
+	d2RenderTgt->FillRectangle(element->rect, d2Brush);
+
+	d2Brush->SetColor(bgColor);
+	d2RenderTgt->FillRoundedRectangle(element, d2Brush);
+
+	float fillHeight = session->getVolume() * (element->rect.bottom - element->rect.top);
+	D2D1_RECT_F fillBase = D2D1::RectF(element->rect.left, element->rect.bottom - fillHeight, element->rect.right, element->rect.bottom);
+	// TODO: replace with D2D1::RoundedRect(rect, radx, rady)
+	D2D1_ROUNDED_RECT fill;
+	fill.rect = fillBase;
+	fill.radiusX = element->radiusX;
+	fill.radiusY = element->radiusY;
+
+	const D2D1_COLOR_F fgColor = session->getForeClr();
+	d2Brush->SetColor(fgColor);
+	d2RenderTgt->FillRoundedRectangle(fill, d2Brush);
+
+	hr = d2RenderTgt->EndDraw();
+	if (FAILED(hr) || hr == D2DERR_RECREATE_TARGET)
+	{
+		discardGraphicsResources();
+	}
+	EndPaint(m_hwnd, &ps);
 }

@@ -22,13 +22,25 @@ class MainWnd : public BaseWnd<MainWnd> {
 	ID2D1HwndRenderTarget *d2RenderTgt;
 	ID2D1SolidColorBrush *d2Brush;
 
+	// User Input
+	D2D1_POINT_2F mouseCoords;
+	AudioControl *current;
+
 	HRESULT createGraphicsResources();
 	void discardGraphicsResources();
 	void onPaint();
 	void resize();
 
-	D2D1_ROUNDED_RECT *createRoundRect(D2D1_RECT_F &);
+	// User Input helpers
+	void onLDown(int xCoord, int yCoord, DWORD flags);
+	void onLUp();
+	void onMouseMove(int xCoord, int yCoord, DWORD flags);
+	AudioControl *getController(D2D1_POINT_2F &);
+	// TODO: conversion DIP <-> pixel
+
+	D2D1_ROUNDED_RECT *createRoundRect(const D2D1_RECT_F &);
 	void setControlElements();
+	void paintController(AudioControl *);
 
 public:
 	MainWnd();
