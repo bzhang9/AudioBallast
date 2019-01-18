@@ -9,6 +9,7 @@
 class AudioControl {
 	IAudioSessionControl *control;
 	ISimpleAudioVolume *volControl;
+	IAudioSessionEvents *listener;
 	D2D1_ROUNDED_RECT *element;
 
 	// Track process

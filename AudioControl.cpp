@@ -1,5 +1,6 @@
 #include <d2d1.h>
 #include "AudioControl.h"
+#include "AudioEvents.h"
 
 /*AudioControl::AudioControl(IAudioSessionControl *control, D2D1_ROUNDED_RECT *element) : 
 	control{ control }, 
@@ -9,18 +10,23 @@
 AudioControl::AudioControl(IAudioSessionControl *control) :
 	control{ control },
 	volControl{ nullptr },
+	listener{ new AudioEvents{ this } },
 	element{ nullptr }
 {
 	HRESULT result = control->QueryInterface(__uuidof(ISimpleAudioVolume), (void **)&volControl);
 	if (FAILED(result)) {
 		return;
 	}
+
+	control->RegisterAudioSessionNotification(listener);
 }
 
 AudioControl::~AudioControl() {
 	delete element;
 	volControl->Release();
+	control->UnregisterAudioSessionNotification(listener);
 	control->Release();
+	listener->Release();
 }
 
 float AudioControl::getVolume() {

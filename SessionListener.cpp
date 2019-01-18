@@ -1,7 +1,7 @@
 #include <windows.h>
 #include "SessionListener.h"
 
-const UINT SessionListener::SL_SESSION_CREATED = 0x0400;
+//const UINT SessionListener::SL_SESSION_CREATED = 0x0400;
 
 SessionListener::SessionListener(HWND hwnd) : m_cRefAll{ 1 }, m_hwndMain{ hwnd } {}
 

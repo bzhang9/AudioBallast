@@ -10,6 +10,7 @@
 #include "AudioControl.h"
 #include "AudioBallastHelpers.h"
 #include "PxlConverter.h"
+#include "AudioEvents.h"
 
 #include <iostream>
 
@@ -85,7 +86,8 @@ MainWnd::MainWnd(IAudioSessionManager2 *mng) :
 MainWnd::~MainWnd() {
 	if (sessListener) {
 		HRESULT result = manager->UnregisterSessionNotification(sessListener);
-		delete sessListener;
+		//delete sessListener;
+		sessListener->Release();
 	}
 	// TODO: syntax
 	for (AudioControl *session : sessions) {
@@ -117,9 +119,11 @@ LRESULT MainWnd::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_SIZE:
 		resize();
 		return 0;
-	//case SessionListener::SL_SESSION_CREATED:
-		// TODO:
-	case 0x0400:
+		//TODO: AE cases
+	case AudioEvents::AE_DISC:
+		removeSession((AudioControl *)wParam);
+		return 0;
+	case SessionListener::SL_SESSION_CREATED:
 		onSessionCreate((IAudioSessionControl *)wParam);
 		return 0;
 	case WM_CREATE:
@@ -377,6 +381,20 @@ void MainWnd::paintController(AudioControl *session) {
 	EndPaint(m_hwnd, &ps);
 }
 
-void MainWnd::configureSessListener() {
+void MainWnd::init() {
 	sessListener->setWnd(m_hwnd);
+	AudioEvents::setHwnd(m_hwnd);
+}
+
+//AudioEvents
+void MainWnd::removeSession(AudioControl *session) {
+	//for (AudioControl *inList : sessions) {
+	for (auto it = sessions.begin(); it != sessions.end(); it++) {
+		if (*it == session) {
+			sessions.erase(it);
+			delete *it;
+			InvalidateRect(m_hwnd, NULL, FALSE);
+			break;
+		}
+	}
 }

@@ -6,7 +6,7 @@ class SessionListener : public IAudioSessionNotification {
 	HWND m_hwndMain;
 	
 public:
-	static const UINT SL_SESSION_CREATED;
+	static const UINT SL_SESSION_CREATED = 0x0400;
 
 	SessionListener(HWND hwnd);
 

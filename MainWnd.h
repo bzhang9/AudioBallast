@@ -40,6 +40,9 @@ class MainWnd : public BaseWnd<MainWnd> {
 	void onSessionCreate(IAudioSessionControl *);
 	AudioControl *getController(D2D1_POINT_2F &);
 
+	//AudioEvents
+	void removeSession(AudioControl *session);
+
 	D2D1_ROUNDED_RECT *createRoundRect(const D2D1_RECT_F &);
 	void setControlElements();
 	void paintController(AudioControl *);
@@ -52,5 +55,5 @@ public:
 	PCWSTR ClassName() const;
 	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	AudioControl *addSession(IAudioSessionControl *);
-	void configureSessListener();
+	void init();
 };
