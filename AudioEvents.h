@@ -6,7 +6,7 @@ class AudioControl;
 
 class AudioEvents : public IAudioSessionEvents {
 	AudioControl *controller;
-	LONG m_cRefAll;
+	LONG refCount;
 	static HWND m_hwndMain;
 public:
 	static const UINT AE_CHVOL = 0x0401;

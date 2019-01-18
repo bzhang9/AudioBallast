@@ -9,7 +9,7 @@ void AudioEvents::setHwnd(HWND hwnd) {
 }
 
 AudioEvents::AudioEvents(AudioControl *controller) : 
-	controller{ controller }, m_cRefAll { 1 }
+	controller{ controller }, refCount { 1 }
 {
 
 }
@@ -46,7 +46,9 @@ HRESULT AudioEvents::OnSessionDisconnected(AudioSessionDisconnectReason Disconne
 
 HRESULT AudioEvents::OnSimpleVolumeChanged(float NewVolume, BOOL NewMute, LPCGUID EventContext)
 {
-	return E_NOTIMPL;
+	// TODO: class containing newvol and mute
+	PostMessage(m_hwndMain, AE_SVOL, (WPARAM)controller, (LPARAM)0);
+	return TRUE;
 }
 
 HRESULT AudioEvents::OnStateChanged(AudioSessionState NewState)
@@ -54,17 +56,37 @@ HRESULT AudioEvents::OnStateChanged(AudioSessionState NewState)
 	return E_NOTIMPL;
 }
 
-HRESULT __stdcall AudioEvents::QueryInterface(REFIID, void **)
+HRESULT __stdcall AudioEvents::QueryInterface(REFIID riid, void **ppvInterface)
 {
+	if (IID_IUnknown == riid)
+	{
+		AddRef();
+		*ppvInterface = (IUnknown*)this;
+	}
+	else if (__uuidof(IAudioSessionEvents) == riid)
+	{
+		AddRef();
+		*ppvInterface = (IAudioSessionEvents*)this;
+	}
+	else
+	{
+		*ppvInterface = NULL;
+		return E_NOINTERFACE;
+	}
 	return S_OK;
 }
 
-ULONG __stdcall AudioEvents::AddRef(void)
+ULONG __stdcall AudioEvents::AddRef()
 {
-	return 0;
+	return InterlockedIncrement(&refCount);
 }
 
-ULONG __stdcall AudioEvents::Release(void)
+ULONG __stdcall AudioEvents::Release()
 {
-	return 0;
+	ULONG ulRef = InterlockedDecrement(&refCount);
+	if (0 == ulRef)
+	{
+		delete this;
+	}
+	return ulRef;
 }
