@@ -43,7 +43,7 @@ MainWnd::MainWnd() :
 MainWnd::MainWnd(IAudioSessionManager2 *mng) : 
 	volManager{ nullptr },
 	manager{ mng }, 
-	sessListener{ new SessionListener{m_hwnd} }, 
+	sessListener{ new SessionListener{ nullptr } }, 
 	sessions{ std::vector<AudioControl *>{} },
 	d2Factory{ nullptr },
 	d2RenderTgt{ nullptr },
@@ -80,7 +80,6 @@ MainWnd::MainWnd(IAudioSessionManager2 *mng) :
 		}
 		addSession(session);
 	}
-	
 }
 
 MainWnd::~MainWnd() {
@@ -118,6 +117,11 @@ LRESULT MainWnd::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_SIZE:
 		resize();
 		return 0;
+	//case SessionListener::SL_SESSION_CREATED:
+		// TODO:
+	case 0x0400:
+		onSessionCreate((IAudioSessionControl *)wParam);
+		return 0;
 	case WM_CREATE:
 		if (FAILED(D2D1CreateFactory(
 			D2D1_FACTORY_TYPE_SINGLE_THREADED, &d2Factory)))
@@ -138,6 +142,7 @@ LRESULT MainWnd::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 AudioControl *MainWnd::addSession(IAudioSessionControl *session) {
 	AudioControl *control = new AudioControl{ session };
 	sessions.emplace_back(control);
+	// TODO: move out
 	setControlElements();
 	return control;
 }
@@ -274,6 +279,13 @@ void MainWnd::onMouseMove(int xCoord, int yCoord, DWORD flags) {
 	paintController(current);
 }
 
+void MainWnd::onSessionCreate(IAudioSessionControl *newSession) {
+	// TODO: try fns on newSession
+
+	addSession(newSession);
+	InvalidateRect(m_hwnd, NULL, FALSE);
+}
+
 AudioControl *MainWnd::getController(D2D1_POINT_2F &pt) {
 	FLOAT x = pt.x;
 	FLOAT y = pt.y;
@@ -363,4 +375,8 @@ void MainWnd::paintController(AudioControl *session) {
 		discardGraphicsResources();
 	}
 	EndPaint(m_hwnd, &ps);
+}
+
+void MainWnd::configureSessListener() {
+	sessListener->setWnd(m_hwnd);
 }

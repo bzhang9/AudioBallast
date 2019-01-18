@@ -26,6 +26,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 		return 0;
 	}
 
+	win.configureSessListener();
 	ShowWindow(win.Window(), nCmdShow);
 
 	// Run the message loop.

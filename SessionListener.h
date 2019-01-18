@@ -4,8 +4,10 @@
 class SessionListener : public IAudioSessionNotification {
 	LONG m_cRefAll;
 	HWND m_hwndMain;
-
+	
 public:
+	static const UINT SL_SESSION_CREATED;
+
 	SessionListener(HWND hwnd);
 
 	~SessionListener();
@@ -18,4 +20,5 @@ public:
 
 	HRESULT STDMETHODCALLTYPE OnSessionCreated(IAudioSessionControl *);
 
+	void setWnd(HWND &wnd);
 };

@@ -10,11 +10,13 @@ struct ID2D1HwndRenderTarget;
 struct ID2D1SolidColorBrush;
 
 class AudioControl;
+class SessionListener;
 
 class MainWnd : public BaseWnd<MainWnd> {
 	IAudioSessionManager *volManager;
 	IAudioSessionManager2 *manager;
-	IAudioSessionNotification *sessListener;
+	//IAudioSessionNotification *sessListener;
+	SessionListener *sessListener;
 	std::vector<AudioControl *> sessions;
 
 	// D2D members
@@ -35,8 +37,8 @@ class MainWnd : public BaseWnd<MainWnd> {
 	void onLDown(int xCoord, int yCoord, DWORD flags);
 	void onLUp();
 	void onMouseMove(int xCoord, int yCoord, DWORD flags);
+	void onSessionCreate(IAudioSessionControl *);
 	AudioControl *getController(D2D1_POINT_2F &);
-	// TODO: conversion DIP <-> pixel
 
 	D2D1_ROUNDED_RECT *createRoundRect(const D2D1_RECT_F &);
 	void setControlElements();
@@ -50,4 +52,5 @@ public:
 	PCWSTR ClassName() const;
 	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	AudioControl *addSession(IAudioSessionControl *);
+	void configureSessListener();
 };
