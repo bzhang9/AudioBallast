@@ -7,6 +7,9 @@
 //class D2D1::ColorF;
 
 class AudioControl {
+	static const D2D1::ColorF muteClr;
+	static const D2D1::ColorF muteClrBg;
+
 	IAudioSessionControl *control;
 	ISimpleAudioVolume *volControl;
 	IAudioSessionEvents *listener;

@@ -7,6 +7,9 @@
 	element{ element } 
 {}*/
 
+const D2D1::ColorF AudioControl::muteClr = D2D1::ColorF(1.0f, 0, 0);
+const D2D1::ColorF AudioControl::muteClrBg = D2D1::ColorF(1.0f, 0, 0, 0.5f);
+
 AudioControl::AudioControl(IAudioSessionControl *control) :
 	control{ control },
 	volControl{ nullptr },
@@ -85,6 +88,9 @@ void AudioControl::deleteElement() {
 }
 
 const D2D1::ColorF &AudioControl::getForeClr() {
+	if (!audible()) {
+		return muteClr;
+	}
 	float vol = getVolume();
 	float r = vol > 0.5f ? 2.0f - 2 * vol : 1.0f;
 	float g = vol > 0.5f ? 1.0f : 2 * vol;
@@ -92,6 +98,9 @@ const D2D1::ColorF &AudioControl::getForeClr() {
 }
 
 const D2D1::ColorF &AudioControl::getBackClr() {
+	if (!audible()) {
+		return muteClrBg;
+	}
 	float vol = getVolume();
 	float r = vol > 0.5f ? 2.0f - 2 * vol : 1.0f;
 	float g = vol > 0.5f ? 1.0f : 2 * vol;

@@ -120,6 +120,9 @@ LRESULT MainWnd::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		resize();
 		return 0;
 		//TODO: AE cases
+	case AudioEvents::AE_SVOL:
+		externVolChange((AudioControl *)wParam);
+		return 0;
 	case AudioEvents::AE_DISC:
 		removeSession((AudioControl *)wParam);
 		return 0;
@@ -397,4 +400,8 @@ void MainWnd::removeSession(AudioControl *session) {
 			break;
 		}
 	}
+}
+
+void MainWnd::externVolChange(AudioControl *session) {
+	paintController(session);
 }

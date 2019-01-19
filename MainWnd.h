@@ -42,6 +42,7 @@ class MainWnd : public BaseWnd<MainWnd> {
 
 	//AudioEvents
 	void removeSession(AudioControl *session);
+	void externVolChange(AudioControl *session);
 
 	D2D1_ROUNDED_RECT *createRoundRect(const D2D1_RECT_F &);
 	void setControlElements();
